@@ -1,0 +1,223 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 0: Global Safety Net (Default-Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // Validation Blueprint: UserPublic (/users/{userId})
+    function isValidUserPublic(data) {
+      return data.keys().hasAll(['id', 'name', 'createdAt'])
+        && data.keys().hasOnly(['id', 'name', 'createdAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.id == request.auth.uid
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+        && data.createdAt is timestamp;
+    }
+
+    // Validation Blueprint: UserPrivate (/users/{userId}/private/{docId})
+    function isValidUserPrivate(data) {
+      return data.keys().hasAll(['id', 'email', 'passwordHash', 'createdAt'])
+        && data.keys().hasOnly(['id', 'email', 'passwordHash', 'createdAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.id == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.passwordHash is string && data.passwordHash.size() >= 10 && data.passwordHash.size() <= 512
+        && data.createdAt is timestamp;
+    }
+
+    // Validation Blueprint: Property (/properties/{propertyId})
+    function isValidProperty(data) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'ownerName', 'name', 'image', 'price',
+          'location', 'category', 'bedrooms', 'bathrooms', 'area',
+          'description', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'ownerName', 'name', 'image', 'price',
+          'location', 'category', 'bedrooms', 'bathrooms', 'area',
+          'description', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.ownerName is string && data.ownerName.size() >= 1 && data.ownerName.size() <= 100
+        && data.name is string && data.name.size() >= 3 && data.name.size() <= 160
+        && data.image is string && data.image.size() >= 1 && data.image.size() <= 800000
+        && data.price is number && data.price >= 0 && data.price <= 1000000000
+        && data.location is string && data.location.size() >= 2 && data.location.size() <= 160
+        && data.category is string && data.category.size() >= 4 && data.category.size() <= 20
+        && (data.category == 'House' || data.category == 'Apartment' || data.category == 'Plot')
+        && data.bedrooms is number && data.bedrooms >= 0 && data.bedrooms <= 50
+        && data.bathrooms is number && data.bathrooms >= 0 && data.bathrooms <= 50
+        && data.area is number && data.area >= 0 && data.area <= 10000000
+        && data.description is string && data.description.size() >= 10 && data.description.size() <= 4000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: Booking (/bookings/{bookingId})
+    function isValidBooking(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'propertyId', 'propertyName', 'propertyImage',
+          'propertyLocation', 'propertyPrice', 'viewingDate', 'viewingTime',
+          'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'userId', 'propertyId', 'propertyName', 'propertyImage',
+          'propertyLocation', 'propertyPrice', 'viewingDate', 'viewingTime',
+          'status', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId == request.auth.uid
+        && data.propertyId is string && data.propertyId.size() >= 1 && data.propertyId.size() <= 128 && data.propertyId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.propertyName is string && data.propertyName.size() >= 1 && data.propertyName.size() <= 160
+        && data.propertyImage is string && data.propertyImage.size() >= 1 && data.propertyImage.size() <= 800000
+        && data.propertyLocation is string && data.propertyLocation.size() >= 1 && data.propertyLocation.size() <= 160
+        && data.propertyPrice is number && data.propertyPrice >= 0 && data.propertyPrice <= 1000000000
+        && data.viewingDate is string && data.viewingDate.size() >= 8 && data.viewingDate.size() <= 20
+        && data.viewingTime is string && data.viewingTime.size() >= 3 && data.viewingTime.size() <= 30
+        && data.status is string && data.status.size() >= 7 && data.status.size() <= 20
+        && (data.status == 'Pending' || data.status == 'Confirmed' || data.status == 'Cancelled')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Collection: /users/{userId} (Public User Profile)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && existing().id == userId;
+      allow list: if false;
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUserPublic(incoming())
+        && incoming().id == userId
+        && incoming().createdAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidUserPublic(incoming())
+        && isValidId(userId)
+        && existing().id == request.auth.uid
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name']);
+      allow delete: if false;
+
+      // Subcollection: /users/{userId}/private/{docId} (PII Isolated)
+      match /private/{docId} {
+        allow get: if isVerifiedUser()
+          && isValidId(userId)
+          && isValidId(docId)
+          && request.auth.uid == userId
+          && existing().id == request.auth.uid
+          && get(/databases/$(database)/documents/users/$(userId)).data.id == request.auth.uid;
+        allow list: if false;
+        allow create: if isVerifiedUser()
+          && isValidId(userId)
+          && isValidId(docId)
+          && request.auth.uid == userId
+          && isValidUserPrivate(incoming())
+          && incoming().id == userId
+          && incoming().createdAt == request.time
+          && get(/databases/$(database)/documents/users/$(userId)).data.id == request.auth.uid;
+        allow update: if isVerifiedUser()
+          && isValidUserPrivate(incoming())
+          && isValidId(userId)
+          && isValidId(docId)
+          && request.auth.uid == userId
+          && existing().id == request.auth.uid
+          && incoming().id == existing().id
+          && incoming().email == existing().email
+          && incoming().createdAt == existing().createdAt
+          && incoming().diff(existing()).affectedKeys().hasOnly(['passwordHash'])
+          && get(/databases/$(database)/documents/users/$(userId)).data.id == request.auth.uid;
+        allow delete: if false;
+      }
+    }
+
+    // Collection: /properties/{propertyId}
+    match /properties/{propertyId} {
+      allow get: if isValidId(propertyId) && existing().price >= 0;
+      allow list: if resource.data.price >= 0;
+      allow create: if isVerifiedUser()
+        && isValidId(propertyId)
+        && isValidProperty(incoming())
+        && incoming().id == propertyId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidProperty(incoming())
+        && isValidId(propertyId)
+        && existing().ownerId == request.auth.uid
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'image', 'price', 'location', 'category',
+          'bedrooms', 'bathrooms', 'area', 'description', 'updatedAt'
+        ]);
+      allow delete: if isVerifiedUser()
+        && isValidId(propertyId)
+        && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection: /bookings/{bookingId}
+    match /bookings/{bookingId} {
+      allow get: if isVerifiedUser()
+        && isValidId(bookingId)
+        && existing().userId == request.auth.uid;
+      allow list: if isVerifiedUser()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(bookingId)
+        && isValidBooking(incoming())
+        && incoming().id == bookingId
+        && incoming().status == 'Pending'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/properties/$(incoming().propertyId));
+      allow update: if isVerifiedUser()
+        && isValidBooking(incoming())
+        && isValidId(bookingId)
+        && existing().userId == request.auth.uid
+        && existing().status != 'Cancelled'
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().propertyId == existing().propertyId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          // Action 1: Cancel Booking
+          (incoming().status == 'Cancelled' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+          // Action 2: Reschedule Viewing while Pending
+          (existing().status == 'Pending' && incoming().status == 'Pending' && incoming().diff(existing()).affectedKeys().hasOnly(['viewingDate', 'viewingTime', 'updatedAt']))
+        );
+      allow delete: if isVerifiedUser()
+        && isValidId(bookingId)
+        && existing().userId == request.auth.uid;
+    }
+  }
+}

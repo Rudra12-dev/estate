@@ -1,0 +1,274 @@
+{
+  "entities": {
+    "UserPublic": {
+      "title": "UserPublic",
+      "description": "Publicly visible user profile data without PII.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user identifier matching auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the user.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the account was created."
+        }
+      },
+      "required": ["id", "name", "createdAt"]
+    },
+    "UserPrivate": {
+      "title": "UserPrivate",
+      "description": "Strictly isolated private user credentials and PII.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user identifier matching auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "passwordHash": {
+          "type": "string",
+          "description": "Cryptographic password hash.",
+          "minLength": 10,
+          "maxLength": 512
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the private record was created."
+        }
+      },
+      "required": ["id", "email", "passwordHash", "createdAt"]
+    },
+    "Property": {
+      "title": "Property",
+      "description": "Real estate property listing.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique property identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the user who owns this listing.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerName": {
+          "type": "string",
+          "description": "Display name of the property owner.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "name": {
+          "type": "string",
+          "description": "Title or street address of the property.",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "image": {
+          "type": "string",
+          "description": "Image URL or data URI for the property.",
+          "minLength": 1,
+          "maxLength": 800000
+        },
+        "price": {
+          "type": "number",
+          "description": "Listing price in USD."
+        },
+        "location": {
+          "type": "string",
+          "description": "City, state, and ZIP code of the property.",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "category": {
+          "type": "string",
+          "description": "Property category.",
+          "enum": ["House", "Apartment", "Plot"],
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "bedrooms": {
+          "type": "number",
+          "description": "Number of bedrooms (0 for plots)."
+        },
+        "bathrooms": {
+          "type": "number",
+          "description": "Number of bathrooms (0 for plots)."
+        },
+        "area": {
+          "type": "number",
+          "description": "Property area in square feet."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed property description.",
+          "minLength": 10,
+          "maxLength": 4000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "ownerName",
+        "name",
+        "image",
+        "price",
+        "location",
+        "category",
+        "bedrooms",
+        "bathrooms",
+        "area",
+        "description",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Property viewing appointment booked by a user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique booking identifier.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the user who booked the viewing.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "ID of the property being viewed.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "propertyName": {
+          "type": "string",
+          "description": "Snapshot of property name.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "propertyImage": {
+          "type": "string",
+          "description": "Snapshot of property image.",
+          "minLength": 1,
+          "maxLength": 800000
+        },
+        "propertyLocation": {
+          "type": "string",
+          "description": "Snapshot of property location.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "propertyPrice": {
+          "type": "number",
+          "description": "Snapshot of property price."
+        },
+        "viewingDate": {
+          "type": "string",
+          "description": "Scheduled viewing date (YYYY-MM-DD).",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "viewingTime": {
+          "type": "string",
+          "description": "Scheduled viewing time slot.",
+          "minLength": 3,
+          "maxLength": 30
+        },
+        "status": {
+          "type": "string",
+          "description": "Booking status.",
+          "enum": ["Pending", "Confirmed", "Cancelled"],
+          "minLength": 7,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "propertyId",
+        "propertyName",
+        "propertyImage",
+        "propertyLocation",
+        "propertyPrice",
+        "viewingDate",
+        "viewingTime",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserPublic",
+      "description": "Public user profiles containing non-PII display information."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": "UserPrivate",
+      "description": "Isolated private user PII and credentials accessible only by the owner."
+    },
+    "/properties/{propertyId}": {
+      "schema": "Property",
+      "description": "Real estate property listings."
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Viewing appointments booked by users."
+    }
+  }
+}

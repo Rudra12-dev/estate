@@ -1,0 +1,6 @@
+{
+  "name": "HomeLuxe Real Estate",
+  "description": "Discover exceptional houses, apartments, and plots. Browse verified listings, book property viewings, and manage your real estate portfolio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
